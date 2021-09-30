@@ -1,0 +1,225 @@
+﻿@model IEnumerable<StockModel>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+    }
+</style>
+
+<div class="text-center">
+    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Stock Comparision</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="stocktable"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form>
+        <input type="button" class="btn btn-primary btn-lg btn-block" value="Start Analysis" onclick="SimpleCall()" />
+        <br />
+        <span id="firstSet" hidden>Stocks- <span id="firstStockSet"></span></span>
+        <div class="progress" id="progress-bar1" hidden>
+            <div class="progress-bar" id="progress1" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">starting analysis</div>
+        </div>
+        <div id="setOne" hidden>
+            <span id="setOneHighest"></span> is expected to perform better <input type="button" onclick="ShowPopUp(firstTable)" value="see comparision" />
+            <br />
+            <span>----------------------------------------------------------------------------------------------------------------------</span>
+
+        </div>
+        <br />
+        <span id="secondSet" hidden>Stocks- <span id="secondStockSet"></span></span>
+        <div class="progress" id="progress-bar2" hidden>
+            <div class="progress-bar" id="progress2" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">starting analysis</div>
+        </div>
+        <div id="setTwo" hidden>
+            <span id="setTwoHighest"></span> is expected to perform better <input type="button" onclick="ShowPopUp(secondTable)" value="see comparision" />
+            <br />
+            <span>----------------------------------------------------------------------------------------------------------------------</span>
+        </div>
+
+        <br />
+        <span id="thirdSet" hidden>Stocks- <span id="thirdStockSet"></span></span>
+        <div class="progress" id="progress-bar3" hidden>
+            <div class="progress-bar" id="progress3" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">starting analysis</div>
+        </div>
+        <div id="setThree" hidden>
+            <span id="setThreeHighest"></span> is expected to perform better <input type="button" onclick="ShowPopUp(thirdTable)" value="see comparision" />
+            <br />
+            <span>----------------------------------------------------------------------------------------------------------------------</span>
+        </div>
+    </form>
+</div>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script>
+    var stockObj; var table1; var firstTable; var secondTable; var thirdTable;
+    $(document).ready(function () {
+        stockObj = @Html.Raw(Json.Serialize(@Model));
+    });
+
+    function ShowPopUp(id) {
+        $("div#stocktable").empty();
+        table1 = $("<table>").attr("id", "queryTable").attr("style", "width:100%").append(
+            $("<tbody>").append(
+                $("<tr>").append(
+                    $("<th>").text("Stock"),
+                    $("<th>").text("Positive Words"),
+                    $("<th>").text("Negative Words"),
+                    $("<th>").text("Words Considered")
+                )
+            )
+        )
+        $("div#stocktable").append(table1);
+        $('#queryTable > tbody:last-child').append("'" + id+"'");
+        $('#exampleModalCenter').modal('show');
+    }
+    width1 = 0;
+    function doStuff1() {
+        width1 += 10;
+        $("#progress1").text("analysis in progress");
+        if (width1 < 90) {
+            $("#progress1").css('width', width1 + '%');
+        }
+    }
+    width2 = 0;
+    function doStuff2() {
+        width2 += 10;
+        $("#progress2").text("analysis in progress");
+        if (width2 < 90) {
+            $("#progress2").css('width', width2 + '%');
+        }
+    }
+    width3 = 0;
+    function doStuff3() {
+        width3 += 10;
+        $("#progress3").text("analysis in progress");
+        if (width3 < 90) {
+            $("#progress3").css('width', width3 + '%');
+        }
+    }
+
+    function SimpleCall() {
+        One(1);
+        Two(2);
+        Three(3);
+    };
+
+    function One(stockSetId) {
+        $("#firstSet").removeAttr("hidden");
+        $("#firstStockSet").text(stockObj[0].stockName);
+        var interval = setInterval(doStuff1, 4000);
+        $("#progress-bar1").removeAttr("hidden");
+        var dattoappend; var dt; var dr;
+        $.ajax({
+            url: "/Home/AnalyzeSetOfStocks",
+            contentType: 'application/json',
+            dataType: "JSON",
+            type: "GET",
+            data: { stockSetId: parseInt(stockSetId) },
+            success: function (data) {
+                var highestPositiveCount = 0; var highestStock;
+                $.each(data[0], function (i, val) {
+                    firstTable += '<tr><td>' + data[0][i].stockName + '</td><td>' + data[0][i].positive + '</td><td>' + data[0][i].negative + '</td><td>' + data[0][i].totalWords + '</td></tr>';
+                    if (parseInt(highestPositiveCount) < parseInt(data[0][i].positive)) {
+                        highestPositiveCount = data[0][i].positive;
+                        highestStock = data[0][i].stockName;
+                    }
+                });
+                clearInterval(interval);
+                $("#progress1").addClass("w3-green");
+                $("#progress1").css('width', '100%');
+                $("#progress1").text("analysis completed");
+                $("#setOne").removeAttr("hidden");
+                $("#setOneHighest").text(highestStock);
+
+            },
+            error: function (err) {
+                $("#progress1").text("analysis cannot be completed now");
+            }
+        });
+    }
+
+    function Two(stockSetId) {
+        $("#secondSet").removeAttr("hidden");
+        $("#secondStockSet").text(stockObj[1].stockName);
+        var interval = setInterval(doStuff2, 3900);
+        $("#progress-bar2").removeAttr("hidden");
+        var dattoappend; var dt; var dr;
+        $.ajax({
+            url: "/Home/AnalyzeSetOfStocks",
+            contentType: 'application/json',
+            dataType: "JSON",
+            type: "GET",
+            data: { stockSetId: parseInt(stockSetId) },
+            success: function (data) {
+                var highestPositiveCount = 0; var highestStock;
+                $.each(data[0], function (i, val) {
+                    secondTable += '<tr><td>' + data[0][i].stockName + '</td><td>' + data[0][i].positive + '</td><td>' + data[0][i].negative + '</td><td>' + data[0][i].totalWords + '</td></tr>';
+                    if (parseInt(highestPositiveCount) < parseInt(data[0][i].positive)) {
+                        highestPositiveCount = data[0][i].positive;
+                        highestStock = data[0][i].stockName;
+                    }
+                });
+                clearInterval(interval);
+                $("#progress2").addClass("w3-green");
+                $("#progress2").css('width', '100%');
+                $("#progress2").text("analysis completed");
+                $("#setTwo").removeAttr("hidden");
+                $("#setTwoHighest").text(highestStock);
+
+            },
+            error: function (err) {
+                $("#progress2").text("analysis cannot be completed now");
+            }
+        });
+    }
+
+    function Three(stockSetId) {
+        $("#thirdSet").removeAttr("hidden");
+        $("#thirdStockSet").text(stockObj[2].stockName);
+        var interval = setInterval(doStuff3, 4100);
+        $("#progress-bar3").removeAttr("hidden");
+        var dattoappend; var dt; var dr;
+        $.ajax({
+            url: "/Home/AnalyzeSetOfStocks",
+            contentType: 'application/json',
+            dataType: "JSON",
+            type: "GET",
+            data: { stockSetId: parseInt(stockSetId) },
+            success: function (data) {
+                var highestPositiveCount = 0; var highestStock;
+                $.each(data[0], function (i, val) {
+                    thirdTable += '<tr><td>' + data[0][i].stockName + '</td><td>' + data[0][i].positive + '</td><td>' + data[0][i].negative + '</td><td>' + data[0][i].totalWords + '</td></tr>';
+                    if (parseInt(highestPositiveCount) < parseInt(data[0][i].positive)) {
+                        highestPositiveCount = data[0][i].positive;
+                        highestStock = data[0][i].stockName;
+                    }
+                });
+                clearInterval(interval);
+                $("#progress3").addClass("w3-green");
+                $("#progress3").css('width', '100%');
+                $("#progress3").text("analysis completed");
+                $("#setThree").removeAttr("hidden");
+                $("#setThreeHighest").text(highestStock);
+
+            },
+            error: function (err) {
+                $("#progress3").text("analysis cannot be completed now");
+            }
+        });
+    }
+    
+</script>
